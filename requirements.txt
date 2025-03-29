@@ -1,2 +1,3 @@
 pixeltable
 jupyter
+google-generativeai
