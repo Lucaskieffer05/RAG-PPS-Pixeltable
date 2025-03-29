@@ -1,3 +1,6 @@
 pixeltable
 jupyter
 google-generativeai
+sentence-transformers 
+tiktoken 
+openpyxl
