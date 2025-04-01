@@ -1,24 +1,31 @@
-import ollama
-
-ollama.pull('qwen2.5:0.5b')
-ollama.generate('qwen2.5:0.5b', 'Cual es la capital de buenos aires?')['response']
-
 import pixeltable as pxt
-from pixeltable.functions.ollama import chat
+from pixeltable.functions import llama_cpp
 
-pxt.drop_dir('ollama_demo', force=True)
-pxt.create_dir('ollama_demo')
-t = pxt.create_table('ollama_demo.chat', {'input': pxt.String})
+pxt.drop_dir('llama_demo', force=True)
+pxt.create_dir('llama_demo')
 
-messages = [{'role': 'user', 'content': t.input}]
+t = pxt.create_table('llama_demo.chat', {'input': pxt.String})
 
-t.add_computed_column(output=chat(
-    messages=messages,
-    model='qwen2.5:0.5b',
-    # These parameters are optional and can be used to tune model behavior:
-    options={'max_tokens': 300, 'top_p': 0.9, 'temperature': 0.5},
+# Add a computed column that uses llama.cpp for chat completion
+# against the input.
+
+messages = [
+    {'role': 'system', 'content': 'You are a helpful assistant.'},
+    {'role': 'user', 'content': t.input}
+]
+
+t.add_computed_column(result=llama_cpp.create_chat_completion(
+    messages,
+    repo_id='Qwen/Qwen2.5-0.5B-Instruct-GGUF',
+    repo_filename='*q5_k_m.gguf',
+    temperature=0.7,
+    max_new_tokens=256,
+    top_p=0.95,
+    top_k=40,
+    n=1,
 ))
 
-# Extract the response content into a separate column
+# Extract the output content from the JSON structure returned
+# by llama_cpp.
 
-t.add_computed_column(response=t.output.message.content)
+t.add_computed_column(output=t.result.choices[0].message.content)
