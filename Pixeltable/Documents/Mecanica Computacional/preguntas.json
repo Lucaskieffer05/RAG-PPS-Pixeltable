@@ -1,0 +1,12 @@
+[
+    {"id": 1, "question": "¿Cuál es el enfoque principal del capítulo 1 de este documento?", "answer": "Se centra en los modelos físicos y matemáticos, explicando principios físicos fundamentales como las leyes que gobiernan el flujo de fluidos y las relaciones termodinámicas."},
+    {"id": 2, "question": "¿En que capitulo se explica Diferencias Finitas (FDM)?", "answer": "Capitulo 2"},
+    {"id": 3, "question": "¿Cuál es el propósito del modelo matemático descrito para la disipación de calor en un microprocesador?", "answer": "El modelo matemático tiene como objetivo predecir la temperatura del microprocesador en función de la potencia disipada y el tiempo, utilizando ecuaciones diferenciales que describen la transferencia de calor."},
+    {"id": 4, "question": "¿Qué es un modelo físico?", "answer": "Un modelo físico es una representación simplificada de un sistema real que se utiliza para entender y predecir su comportamiento."},
+    {"id": 5, "question": "¿Qué son las ecuaciones de Navier-Stokes?", "answer": "Son un conjunto de ecuaciones que describen el movimiento de fluidos viscosos y son fundamentales en la mecánica de fluidos."},
+    {"id": 6, "question": "¿Qué es un modelo matemático?", "answer": "Un modelo matemático es una representación matemática de un sistema o fenómeno real, que utiliza ecuaciones y variables para describir su comportamiento."},
+    {"id": 7, "question": "¿Qué es la termodinámica?", "answer": "La termodinámica es la rama de la física que estudia las relaciones entre el calor, el trabajo y la energía."},
+    {"id": 8, "question": "¿Qué es un fluido?", "answer": "Un fluido es una sustancia que puede fluir y tomar la forma del recipiente que lo contiene, incluyendo líquidos y gases."},
+    {"id": 9, "question": "¿Qué son las condiciones iniciales en un problema de transferencia de calor?", "answer": "Las condiciones iniciales son los valores de temperatura y otras variables relevantes en el momento inicial del análisis."},
+    {"id": 10, "question": "¿Qué es un modelo computacional?", "answer": "Un modelo computacional es una simulación por computadora que utiliza algoritmos y datos para resolver problemas complejos."}
+]
