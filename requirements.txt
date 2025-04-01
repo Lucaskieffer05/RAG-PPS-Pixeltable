@@ -1,6 +1,14 @@
+# Análisis de datos
 pixeltable
-jupyter
-google-generativeai
-sentence-transformers 
-tiktoken 
 openpyxl
+
+# IA/LLMs
+ollama
+google-generativeai
+sentence-transformers
+tiktoken
+huggingface-hub
+llama-cpp-python
+
+# Desarrollo
+jupyter
