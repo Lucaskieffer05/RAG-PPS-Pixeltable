@@ -1,3 +1,4 @@
+# TODO: Armar la App 
 import pixeltable as pxt
 
 # Conectar a las tablas

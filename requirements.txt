@@ -4,3 +4,4 @@ google-generativeai
 sentence-transformers 
 tiktoken 
 openpyxl
+pytesseract
