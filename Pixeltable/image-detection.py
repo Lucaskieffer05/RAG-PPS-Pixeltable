@@ -109,7 +109,7 @@ def extract_license_plate_text(img: PIL.Image.Image, boxes: list[list[float]]) -
 
 # TODO: Revisar función
 @pxt.udf
-def draw_boxes_with_labels(img: PIL.Image.Image, detections) -> PIL.Image.Image:
+def draw_boxes_with_labels(img: PIL.Image.Image, detections, license_plate_text=None) -> PIL.Image.Image:
     """Dibuja boxes con sus correspondientes labels"""
     if not detections or not detections.get('boxes'):
         return img
@@ -132,11 +132,15 @@ def draw_boxes_with_labels(img: PIL.Image.Image, detections) -> PIL.Image.Image:
 
 # Agrega la visualización a ambas tablas (imágenes y videos)
 images.add_computed_column(
-    visualization=draw_boxes_with_labels(images.image, images.detections.boxes)
+    visualization=draw_boxes_with_labels(images.image, 
+                                         images.detections.boxes,
+                                         images.license_plate_text if EXTRACT_TEXT_FROM_LICENSE_PLATES else None)
 )
 
 frames.add_computed_column(
-    visualization=draw_boxes_with_labels(frames.frame, frames.detections.boxes)
+    visualization=draw_boxes_with_labels(frames.frame, 
+                                         frames.detections.boxes,
+                                         frames.license_plate_text if EXTRACT_TEXT_FROM_LICENSE_PLATES else None)
 )
 
 # Columnas computadas para la detección (se pasa el modelo y el umbral de confianza)

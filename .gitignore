@@ -1,3 +1,10 @@
+#Media
+media/
+media/*
+*.jpg
+*.jpeg
+*.png
+*.mp4
 # Jupyter Notebook
 .ipynb_checkpoints
 */.ipynb_checkpoints/*

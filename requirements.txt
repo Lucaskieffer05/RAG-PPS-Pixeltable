@@ -5,3 +5,6 @@ sentence-transformers
 tiktoken 
 openpyxl
 pytesseract
+matplotlib
+transformers
+torch
