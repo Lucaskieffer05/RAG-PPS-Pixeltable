@@ -4,12 +4,11 @@ from pixeltable.iterators import FrameIterator
 from pixeltable.functions.huggingface import sentence_transformer, clip
 from pixeltable.ext.functions.yolox import yolox
 import PIL.Image
-import PIL.ImageDraw
 import pytesseract  
 from PIL import ImageOps, ImageEnhance
 
 class ImageProcessor:
-    # Constructor con parámetros -> ( Directorio, Modelo, umbral de confianza para detección)
+    # Constructor con parámetros -> ( Modelo, umbral de confianza para detección)
     def __init__(self, model='yolox_s', confidence_threshold=0.5):
         self.model = model
         self.confidence_threshold = confidence_threshold
@@ -77,20 +76,25 @@ class ImageProcessor:
     # detecciones filtradas, patentes extraidas y embeddings para búsqueda
     def setup_processing(self, extract_text=False, enable_search=False):
         # Columnas para la detección
-        self.table.add_computed_column(
-            raw_detections=yolox(self.table.image, model_id=self.model, threshold=self.confidence_threshold)
-        )
-        self.table.add_computed_column(
-            detections=self.filter_target_objects(self.table.raw_detections)
-        )
-        if extract_text:
+        if 'raw_detections' not in self.table.columns:
+            self.table.add_computed_column(
+                raw_detections=yolox(self.table.image, model_id=self.model, threshold=self.confidence_threshold)
+            )
+        
+        if 'detections' not in self.table.columns:
+            self.table.add_computed_column(
+                detections=self.filter_target_objects(self.table.raw_detections)
+            )
+        
+        if extract_text and 'license_plate_text' not in self.table.columns:
             self.table.add_computed_column(
                 license_plate_text=self.extract_license_plate_text(self.table.image, self.table.detections.boxes)
             )
         
-        # Columna para la búsqueda
+        # # Columna para la búsqueda
         if enable_search:
-            self.table.add_embedding_index('image',
+            self.table.add_embedding_index(
+                'image',
                 string_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True),
                 image_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True)
             )

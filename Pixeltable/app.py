@@ -6,12 +6,10 @@ from image_video_processor import ImageProcessor, VideoProcessor
 import PIL.Image
 import glob
 
-# Define parameters (instead of command-line arguments)
-# These would be set in separate cells in a Jupyter notebook
 images_directory = "Media/Images/cars"
 videos_directory = "Media/Videos"
 search_query = "white car"  # Example query
-search_image_path = "Media/Images/sample.jpg"  # Example path to a query image
+search_image_path = "Media/Images/cars/1478020796209432542.jpg"  # Example path to a query image
 
 print("Pixeltable Media Processing Demo")
 print("===============================\n")
