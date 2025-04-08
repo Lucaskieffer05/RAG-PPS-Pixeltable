@@ -41,7 +41,7 @@ print("Documentos cargados correctamente.")
 # ---------------------------------------------------------------------------------------------------
 # Realizar particiones del documento
 # ---------------------------------------------------------------------------------------------------
-
+print("Realizando particiones del documento.")
 from pixeltable.iterators import DocumentSplitter
 
 chunks_t = pxt.create_view(
@@ -58,14 +58,14 @@ chunks_t = pxt.create_view(
 # ---------------------------------------------------------------------------------------------------
 # incrustal indexar documentos
 # ---------------------------------------------------------------------------------------------------
-
+print("Incrustal indexar documentos.")
 from pixeltable.functions.huggingface import sentence_transformer
 
 chunks_t.add_embedding_index(
     'text',
     embedding=sentence_transformer.using(model_id='intfloat/e5-large-v2')
 )
-
+"""
 query_text = "¿Que es Diferencias Finitas (FDM)?"
 sim = chunks_t.text.similarity(query_text)
 nvidia_eps_query = (
@@ -74,11 +74,12 @@ nvidia_eps_query = (
     .select(similarity=sim, text=chunks_t.text)
     .limit(5)
 )
+"""
 
 # ---------------------------------------------------------------------------------------------------
 # Tomamos un top k y damos contexto
 # ---------------------------------------------------------------------------------------------------
-
+print("Tomando el top k y dando contexto.")
 
 @pxt.query
 def top_k(query_text: str):
@@ -96,7 +97,7 @@ queries_data.add_computed_column(
 # ---------------------------------------------------------------------------------------------------
 # Creamos la prompt para el modelo LLM
 # ---------------------------------------------------------------------------------------------------
-
+print("Creando la prompt para el modelo LLM.")
 
 @pxt.udf
 def create_prompt(top_k_list: list[dict], question: str) -> str:
@@ -119,7 +120,8 @@ queries_data.add_computed_column(
 # ---------------------------------------------------------------------------------------------------
 # Hacemos las preguntas
 # ---------------------------------------------------------------------------------------------------
-from pixeltable.functions import llama_cpp
+print("Haciendo las preguntas.")
+from pixeltable.functions.ollama import chat
 
 @pxt.udf
 def create_messages(prompt: str) -> list[dict]:
@@ -128,13 +130,14 @@ def create_messages(prompt: str) -> list[dict]:
         {'role': 'user', 'content': prompt},
     ]
 
-queries_data.add_computed_column(result=llama_cpp.create_chat_completion(
+queries_data.add_computed_column(output=chat(
     messages=create_messages(queries_data.prompt),
-    repo_id='Qwen/Qwen2.5-0.5B-Instruct-GGUF',
-    repo_filename='*q5_k_m.gguf'
+    model='llama3.2:3b',
+    # These parameters are optional and can be used to tune model behavior:
+    options={'max_tokens': 4096, 'top_p': 0.9, 'temperature': 0.5},
 ))
 
 
-queries_data.add_computed_column(output=queries_data.result.choices[0].message.content)
+queries_data.add_computed_column(response=queries_data.output.message.content)
 
-queries_data.select(queries_data.question, queries_data.answer).collect()
+queries_data.select(queries_data.question, queries_data.answer, queries_data.response).collect()
