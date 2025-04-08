@@ -95,8 +95,8 @@ class ImageProcessor:
         if enable_search:
             self.table.add_embedding_index(
                 'image',
-                string_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True),
-                image_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True)
+                string_embed = sentence_transformer.using(model_id='intfloat/e5-large-v2'),
+                image_embed= sentence_transformer.using(model_id='intfloat/e5-large-v2')
             )
 
 # -----------------------------------------------------------------------------------------------------------------------------
