@@ -1,7 +1,7 @@
 pixeltable
 jupyter
 google-generativeai
-sentence-transformers 
+sentence-transformers   
 tiktoken 
 openpyxl
 pytesseract

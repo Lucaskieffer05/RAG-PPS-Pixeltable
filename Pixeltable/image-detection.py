@@ -14,6 +14,9 @@ from PIL import ImageOps, ImageEnhance
   # yolox_x
 
 # PARÁMETROS
+MEDIA_DIR = './Media/'
+IMAGE_DIR = MEDIA_DIR + 'Images/'
+VIDEO_DIR = MEDIA_DIR + 'videos/'
 SELECTED_MODEL_IMAGES = 'yolox_s'
 CONFIDENCE_TRESHOLD_IMAGES = 0.5
 CONFIDENCE_TRESHOLD_VIDEOS = 0.25
@@ -22,11 +25,16 @@ EXTRACTED_FRAMES_PER_SECOND = 1 # Cuantos frames del video se toman por segundo
 DETECTION_TARGETS = ["gun", "license plate"]
 EXTRACT_TEXT_FROM_LICENSE_PLATES = True
 
-# Iniciar entorno
-pxt.drop_dir('detection')
-pxt.create_dir('detection')
+# Inicializar App
+def initialize_pixeltable(dir_name='detection_demo'):
+    pxt.drop_dir(dir_name, force=True)
+    pxt.create_dir(dir_name)
+
+print("Iniciando app...")
+initialize_pixeltable()
 
 # Definir tablas para los archivos
+print("Creando tablas...")
 images = pxt.create_table(
   'detection.images',
   {'image': pxt.ImageType()},
