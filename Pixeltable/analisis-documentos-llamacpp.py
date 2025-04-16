@@ -5,6 +5,7 @@ import pixeltable as pxt
 pxt.drop_dir('rag_demo', force=True)
 pxt.create_dir('rag_demo')
 
+
 # ---------------------------------------------------------------------------------------------------
 # Cargar preguntas desde un archivo JSON
 # ---------------------------------------------------------------------------------------------------
@@ -15,6 +16,14 @@ base = r'Pixeltable/Documents/Mecanica Computacional'
 json_url = base + '/preguntas.json'
 
 # Importar los datos desde el archivo JSON y permitir que cree la tabla automáticamente
+queries_t = pxt.create_table(
+    'rag_demo.queries',
+    {
+        'question': pxt.String,
+        # Agrega otros campos que esperas en tu JSON
+    }
+)
+
 queries_data = pxt.io.import_json(
     filepath_or_url=json_url,
     tbl_path='rag_demo.queries'  # Especificar el nombre de la tabla
@@ -39,7 +48,7 @@ print("Documentos cargados correctamente.")
 
 
 # ---------------------------------------------------------------------------------------------------
-# Realizar particiones del documento
+# Realizar particiones del documento (HECHO)
 # ---------------------------------------------------------------------------------------------------
 print("Realizando particiones del documento.")
 from pixeltable.iterators import DocumentSplitter
@@ -56,7 +65,7 @@ chunks_t = pxt.create_view(
 
 
 # ---------------------------------------------------------------------------------------------------
-# incrustal indexar documentos
+# incrustal indexar documentos (HECHO)
 # ---------------------------------------------------------------------------------------------------
 print("Incrustal indexar documentos.")
 from pixeltable.functions.huggingface import sentence_transformer
@@ -77,7 +86,7 @@ nvidia_eps_query = (
 """
 
 # ---------------------------------------------------------------------------------------------------
-# Tomamos un top k y damos contexto
+# Tomamos un top k y damos contexto (HECHO)
 # ---------------------------------------------------------------------------------------------------
 print("Tomando el top k y dando contexto.")
 
@@ -95,7 +104,7 @@ queries_data.add_computed_column(
 )
 
 # ---------------------------------------------------------------------------------------------------
-# Creamos la prompt para el modelo LLM
+# Creamos la prompt para el modelo LLM (HECHO)
 # ---------------------------------------------------------------------------------------------------
 print("Creando la prompt para el modelo LLM.")
 
