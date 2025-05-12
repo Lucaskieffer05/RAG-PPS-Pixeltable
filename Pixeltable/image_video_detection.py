@@ -1,18 +1,13 @@
 import pixeltable as pxt
 from pixeltable.iterators import FrameIterator
-from pixeltable.functions.huggingface import sentence_transformer
 from pixeltable.functions.video import extract_audio
 
 # Esto chequear después (tema de embeddings)
-from pixeltable.functions.huggingface import sentence_transformer, clip
+from pixeltable.functions.huggingface import clip
 from pixeltable.ext.functions.yolox import yolox
 import PIL.Image
 import pytesseract  
 from PIL import ImageOps, ImageEnhance
-
-def initialize_pixeltable(dir_name='detection'):
-    pxt.drop_dir(dir_name, force=True)
-    pxt.create_dir(dir_name)
 
 # class ImageProcessor:
 #     def __init__(self, directory : str = "detection", model : str ='yolox_s', confidence_threshold : float = 0.5):
@@ -114,43 +109,52 @@ def initialize_pixeltable(dir_name='detection'):
 
 class VideoProcessor:
     def __init__(self, directory: str = "detection", 
-                 yolox_model='yolox_m', 
-                 confidence_threshold=0.25, 
-                 fps=1,
-                 embed_model: str ='openai/clip-vit-base-patch32'):
+                 yolox_model: str = 'yolox_m', 
+                 confidence_threshold: float = 0.25, 
+                 fps: int = 10,
+                 embed_model: str = 'openai/clip-vit-base-patch32'):
         self.directory = directory
         self.yolox_model = yolox_model
         self.confidence_threshold = confidence_threshold
         self.fps = fps
         self.embed_model = embed_model
+        self.videos_table = None
+        self.frames_view = None
         
     # Crea tabla de videos, view de frames, columnas de detecciones con yolox y embeddings para búsqueda
     # y extrae audio de los videos
     def setup(self) -> None:
         self.videos_table = pxt.create_table(self.directory, 
                                       {'video': pxt.VideoType()}, 
-                                      if_exists='ignore')
+                                      if_exists='replace_force')
         # View de frames
         self.frames_view = pxt.create_view(
             'frames',
             self.videos_table,
             iterator=FrameIterator.create(video=self.videos_table.video, fps=self.fps),
-            if_exists='ignore'
+            if_exists='replace_force'
         )
         
-        self.videos_table.add_computed_column(audio_extract=extract_audio(self.videos_table.video, 
+        if 'audio_extract' not in self.videos_table.columns:
+            self.videos_table.add_computed_column(audio_extract=extract_audio(self.videos_table.video, 
                                                                           format='mp3')) 
-        
-        self.frames_view.add_computed_column(
-            raw_detections=yolox(self.frames_view.frame, model_id=self.yolox_model, threshold=self.confidence_threshold)
-        )
+        if 'raw_detections' not in self.frames_view.columns:
+            self.frames_view.add_computed_column(
+                raw_detections=yolox(self.frames_view.frame, model_id=self.yolox_model, threshold=self.confidence_threshold)
+            )
         
         # Embedding para búsqueda (imágenes y texto)
         self.frames_view.add_embedding_index(
             'frame',
-            string_embed=clip.using(model_id=self.embed_model, use_fast=True),
-            image_embed=clip.using(model_id=self.embed_model, use_fast=True)
+            string_embed=clip.using(model_id=self.embed_model),
+            image_embed=clip.using(model_id=self.embed_model)
         )
+        
+        if hasattr(self.frames_view, 'get_info'):
+            info = self.frames_view.get_info()
+            print("Available indices:", info.get('indices', 'Info method not providing index details'))
+    
+    
         
         
     def process_videos(self, video_paths : list):
@@ -161,10 +165,15 @@ class VideoProcessor:
         # Más eficiete hacer un solo insert
         self.videos_table.insert(video_objects)
 
-    def search_video(self, search_type : str = "Text", text_query=None, image_query=None, limit=5):
+    def search_video(self, search_type : str = "Text", text_search_query=None, image_query=None, limit=5):
+        
+        if hasattr(self.frames_view, 'get_info'):
+            info = self.frames_view.get_info()
+            print("Available search indices:", info.get('indices', 'No index info available'))
+
         try:
-            if search_type == "Text" and text_query:
-                sim = self.frames_view.frame.similarity(text_query)
+            if search_type == "Text" and text_search_query:
+                sim = self.frames_view.frame.similarity(text_search_query)
             elif search_type == "Image" and image_query is not None:
                 sim = self.frames_view.frame.similarity(image_query)
             else:
@@ -173,52 +182,12 @@ class VideoProcessor:
             results = self.frames_view.order_by(sim, asc=False).limit(limit).select(
                 self.frames_view.frame, 
                 self.frames_view.pos, 
-                self.frframes_viewames.detections).collect()
+                self.frames_view.raw_detections
+            ).collect()
             return list(results)
         except Exception as e:
             print(f"Error de búsqueda: {str(e)}")
             return []
-
-    # # Configuración para video
-    # def setup_processing(self, extract_text=False, enable_search=False):
-    #     # Columnas para detección de objetos
-    #     self.frames.add_computed_column(
-    #         raw_detections=yolox(self.frames.frame, model_id=self.model, threshold=self.confidence_threshold)
-    #     )
-    #     self.frames.add_computed_column(
-    #         detections=ImageProcessor.filter_target_objects(self.frames.raw_detections)
-    #     )
-    #     if extract_text:
-    #         self.frames.add_computed_column(
-    #             license_plate_text=ImageProcessor.extract_license_plate_text(self.frames.frame, self.frames.detections.boxes)
-    #         )
-    #     # Columna para la búsqueda
-    #     if enable_search:
-    #         self.frames.add_embedding_index('frame',
-    #             string_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True),
-    #             image_embed=clip.using(model_id='openai/clip-vit-base-patch32', use_fast=True)
-    #         )
-    
-    # # Método para buscar en frames de video
-    # def search(self, search_type, text_query=None, image_query=None, limit=5):
-    #     try:
-    #         if search_type == "Text" and text_query:
-    #             sim = self.frames.frame.similarity(text_query)
-    #         elif search_type == "Image" and image_query is not None:
-    #             sim = self.frames.frame.similarity(image_query)
-    #         else:
-    #             return []
-                
-    #         results = self.frames.order_by(sim, asc=False).limit(limit).select(
-    #             self.frames.frame, 
-    #             self.frames.pos, 
-    #             self.frames.detections, 
-    #             getattr(self.frames, 'license_plate_text', None)
-    #         ).collect()
-    #         return list(results)
-    #     except Exception as e:
-    #         print(f"Error de búsqueda: {str(e)}")
-    #         return []
         
         
 if __name__ == "__main__":
