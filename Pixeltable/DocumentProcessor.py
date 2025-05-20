@@ -69,7 +69,7 @@ class DocumentProcessor:
             {'document': pxt.Document}
         )
 
-        self.insert_documents(['DocNoGrande.pdf'])
+        self.insert_documents(['Leyes2024.pdf'])
 
         self.chunks_view = pxt.create_view(
             f'{self.directory}.chunks',
@@ -121,7 +121,7 @@ class DocumentProcessor:
         print("Generando la respuesta.")
         self.queries_table.add_computed_column(output_content=self.queries_table.raw_output.message.content)
 
-        print(self.chunks_view.select(self.chunks_view.adjusted_page, self.chunks_view.text).collect())
+        #print(self.chunks_view.select(self.chunks_view.adjusted_page, self.chunks_view.text).collect())
     
     # Obtiene los mejores chunks para responder una pregunta
 
@@ -166,7 +166,7 @@ class DocumentProcessor:
             now = datetime.now()
             queries_table.insert([{'question': question, 'created_at': now}])
             print("Pregunta insertada.")
-            print(queries_table.select(queries_table.prompt).collect())
+            #print(queries_table.select(queries_table.prompt).collect())
             return queries_table.select(queries_table.output_content).order_by(queries_table.created_at, asc=False).limit(1).collect()
         except Exception as e:
             return f"Error al insertar la pregunta: {str(e)}"
