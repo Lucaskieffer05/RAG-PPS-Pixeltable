@@ -1,11 +1,13 @@
-pixeltable
+# Jupyter notebook
 jupyter
-google-generativeai
-sentence-transformers   
-tiktoken 
-openpyxl
+# OCR
 pytesseract
-matplotlib
-transformers
-torch
+# Procesamiento de imágenes
 opencv-python
+# Gráficos y visualización
+matplotlib
+# Pixeltable
+pixeltable
+pixeltable-yolox
+# IA 
+transformers # Necesaria 

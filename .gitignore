@@ -16,6 +16,7 @@ __pycache__/
 *.so
 .Python
 env/
+venv310/
 build/
 develop-eggs/
 dist/

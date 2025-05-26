@@ -2,109 +2,112 @@ import pixeltable as pxt
 from pixeltable.iterators import FrameIterator
 from pixeltable.functions.video import extract_audio
 
-# Esto chequear después (tema de embeddings)
 from pixeltable.functions.huggingface import clip
 from pixeltable.ext.functions.yolox import yolox
 import PIL.Image
-import pytesseract  
-from PIL import ImageOps, ImageEnhance
 
-# class ImageProcessor:
-#     def __init__(self, directory : str = "detection", model : str ='yolox_s', confidence_threshold : float = 0.5):
-#         self.directory = directory
-#         self.model = model
-#         self.confidence_threshold = confidence_threshold
 
-#     def setup(self) -> None:
-#         images = pxt.create_table(self.directory, {'image': pxt.ImageType()}, if_exists='ignore')
-#         self.images_table = images
-    
-    
-#     # Método para buscar imágenes similares por texto o imagen
-#     def search(self, search_type, text_query=None, image_query=None, limit=5):
-#         try:
-#             if search_type == "Text" and text_query:
-#                 sim = self.table.image.similarity(text_query)
-#             elif search_type == "Image" and image_query is not None:
-#                 sim = self.table.image.similarity(image_query)
-#             else:
-#                 return []
+# -----------------------------------------------------------------------------------------------------------------------------
+
+class ImageProcessor:
+    def __init__(self, directory: str = "image_processor_data", 
+                 yolox_model: str = 'yolox_m', 
+                 confidence_threshold: float = 0.25, 
+                 embed_model: str = 'openai/clip-vit-base-patch32'):
+        self.directory = directory
+        self.yolox_model = yolox_model
+        self.confidence_threshold = confidence_threshold
+        self.embed_model = embed_model
+        self.images_table = None
+        
+    def setup(self) -> None:
+        self.images_table = pxt.create_table(
+            self.directory, 
+            {'image': pxt.Image}, 
+            if_exists='replace_force'
+        )
+        
+        if 'raw_detections' not in self.images_table.columns:
+            self.images_table.add_computed_column(
+                raw_detections=yolox(self.images_table.image, model_id=self.yolox_model, threshold=self.confidence_threshold)
+            )
+        
+        # Embedding para búsqueda (imágenes y texto)
+        self.images_table.add_embedding_index(
+            'image', 
+            string_embed=clip.using(model_id=self.embed_model), 
+            image_embed=clip.using(model_id=self.embed_model)  
+        )
+        
+        if hasattr(self.images_table, 'get_info'):
+            info = self.images_table.get_info()
+            print("Available indices on images_table:", info.get('indices', 'Info method not providing index details'))
+        
+    def process_images(self, image_paths : list):
+        image_objects = []
+        for image_path in image_paths:
+            try:
+                with open(image_path, 'rb') as f:
+                    pass
+                image_objects.append({'image': image_path})
+            except FileNotFoundError:
+                print(f"Warning: Image file not found at {image_path}, skipping.")
+            except Exception as e:
+                print(f"Warning: Could not process image path {image_path}: {e}, skipping.")
+
+        if not image_objects:
+            print("No valid image paths provided to process.")
+            return
+            
+        self.images_table.insert(image_objects)
+
+    def search_image(self, search_type : str = "Text", text_search_query=None, image_query=None, limit=5):
+        if self.images_table is None:
+            print("Error: Images table not set up. Please run setup() first.")
+            return []
+
+        if hasattr(self.images_table, 'get_info'):
+            info = self.images_table.get_info()
+            print("Available search indices on images_table:", info.get('indices', 'No index info available'))
+
+        try:
+            query_input = None
+            if search_type == "Text" and text_search_query:
+                query_input = text_search_query
+            elif search_type == "Image" and image_query is not None:
+                if isinstance(image_query, str):
+                    try:
+                        query_input = PIL.Image.open(image_query)
+                    except FileNotFoundError:
+                        print(f"Error: Query image file not found at {image_query}")
+                        return []
+                    except Exception as e:
+                        print(f"Error: Could not open query image {image_query}: {e}")
+                        return []
+                elif isinstance(image_query, PIL.Image.Image):
+                    query_input = image_query
+                else:
+                    print("Error: Invalid image_query type. Must be a file path or PIL.Image object.")
+                    return []
+            else:
+                print("Error: Search type not supported or query not provided.")
+                return []
+            
+            if query_input is None: 
+                print("Error: Query input is None.")
+                return []
+
+            sim = self.images_table.image.similarity(query_input)
                 
-#             results = self.table.order_by(sim, asc=False).limit(limit).select(
-#                 self.table.image, 
-#                 self.table.detections, 
-#                 getattr(self.table, 'license_plate_text', None)
-#             ).collect()
-#             return results
-#         except Exception as e:
-#             print(f"Error en la búsqueda: {str(e)}")
-#             return []
+            results = self.images_table.order_by(sim, asc=False).limit(limit).select(
+                self.images_table.image, 
+                self.images_table.raw_detections
+            ).collect()
+            return list(results)
+        except Exception as e:
+            print(f"Error de búsqueda de imagen: {str(e)}")
+            return []
         
-#     # Método para filtrar objetos de interés dentro de la imagen
-#     @staticmethod
-#     @pxt.udf
-#     def filter_target_objects(detections: list[list[float]]) -> list[list[float]]:
-#         if not detections or not detections.get('classes'):
-#             return {'boxes': [], 'classes': [], 'scores': [], 'target_found': False}
-        
-#         filtered_indices = []
-#         for i, class_name in enumerate(detections['classes']):
-#             if class_name.lower() in ['gun', 'rifle', 'pistol', 'weapon', 'knife', 'license plate', 'car', 'truck']:
-#                 filtered_indices.append(i)
-
-#         return {
-#             'boxes': [detections['boxes'][i] for i in filtered_indices],
-#             'classes': [detections['classes'][i] for i in filtered_indices],
-#             'scores': [detections['scores'][i] for i in filtered_indices],
-#             'target_found': len(filtered_indices) > 0
-#         }
-
-#     # Método que usa OCR para extraer texto de las patentes
-#     @staticmethod
-#     @pxt.udf
-#     def extract_license_plate_text(img: PIL.Image.Image, boxes: list[list[float]]) -> list[str]:
-#         if not boxes:
-#             return []
-#         texts = []
-#         for box in boxes:
-#             x1, y1, x2, y2 = [int(coord) for coord in box]
-#             plate_img = img.crop((x1, y1, x2, y2))
-#             plate_img = ImageOps.grayscale(plate_img)
-#             plate_img = ImageEnhance.Contrast(plate_img).enhance(2.0)
-#             try:
-#                 text = pytesseract.image_to_string(plate_img, config='--psm 7 --oem 3').strip()
-#                 texts.append(text if text else "No hay patente detectada")
-#             except Exception as e:
-#                 texts.append(f"OCR Error: {str(e)}")
-#         return texts
-    
-#     # Configuración de las columnas computadas para las detecciones, 
-#     # detecciones filtradas, patentes extraidas y embeddings para búsqueda
-#     def setup_processing(self, extract_text=False, enable_search=False):
-#         # Columnas para la detección
-#         if 'raw_detections' not in self.table.columns:
-#             self.table.add_computed_column(
-#                 raw_detections=yolox(self.table.image, model_id=self.model, threshold=self.confidence_threshold)
-#             )
-        
-#         if 'detections' not in self.table.columns:
-#             self.table.add_computed_column(
-#                 detections=self.filter_target_objects(self.table.raw_detections)
-#             )
-        
-#         if extract_text and 'license_plate_text' not in self.table.columns:
-#             self.table.add_computed_column(
-#                 license_plate_text=self.extract_license_plate_text(self.table.image, self.table.detections.boxes)
-#             )
-        
-#         # # Columna para la búsqueda
-#         if enable_search:
-#             self.table.add_embedding_index(
-#                 'image',
-#                 string_embed = sentence_transformer.using(model_id='intfloat/e5-large-v2'),
-#                 image_embed= sentence_transformer.using(model_id='intfloat/e5-large-v2')
-#             )
-
 # -----------------------------------------------------------------------------------------------------------------------------
 
 class VideoProcessor:
@@ -125,7 +128,7 @@ class VideoProcessor:
     # y extrae audio de los videos
     def setup(self) -> None:
         self.videos_table = pxt.create_table(self.directory, 
-                                      {'video': pxt.VideoType()}, 
+                                      {'video': pxt.VideoType()}, # Esto debería ser pxt.Video
                                       if_exists='replace_force')
         # View de frames
         self.frames_view = pxt.create_view(
@@ -153,9 +156,6 @@ class VideoProcessor:
         if hasattr(self.frames_view, 'get_info'):
             info = self.frames_view.get_info()
             print("Available indices:", info.get('indices', 'Info method not providing index details'))
-    
-    
-        
         
     def process_videos(self, video_paths : list):
         video_objects = []
