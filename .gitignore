@@ -1,6 +1,6 @@
 #Media
-media/
-media/*
+#media/
+#media/*
 *.jpg
 *.jpeg
 *.png
@@ -19,7 +19,7 @@ env/
 venv310/
 build/
 develop-eggs/
-dist/
+dist/ 
 downloads/
 eggs/
 .eggs/
